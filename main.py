@@ -24,6 +24,7 @@ from routers.big_four import router as big_four_router
 from routers.cross_portal import router as cross_portal_router
 from routers.clients import router as clients_router  # type: ignore
 from routers.workpapers import router as workpapers_router  # type: ignore
+from routers.genesis_preview import router as genesis_preview_router
 
 app = FastAPI(title="Audit Genesis API")
 app.include_router(inventory_router, prefix="/api/inventory")
@@ -31,6 +32,7 @@ app.include_router(big_four_router, prefix="/api")
 app.include_router(cross_portal_router, prefix="/api/bridge")
 app.include_router(clients_router, prefix="/api")
 app.include_router(workpapers_router, prefix="/api")
+app.include_router(genesis_preview_router, prefix="/api")
 
 class EncryptedUpload(BaseModel):
     filename: str
