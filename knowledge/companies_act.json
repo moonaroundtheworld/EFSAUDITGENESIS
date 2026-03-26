@@ -1,0 +1,22 @@
+{
+  "Pakistan_Companies_Act_2017": [
+    {
+      "section": "Section 183",
+      "title": "Powers of Board",
+      "description": "The board requires shareholder resolution for significant transactions such as selling the undertaking of the company, or remitting a debt due by a director. High value undocumented cash transactions may violate the restrictions on board powers without shareholder consent.",
+      "keywords": ["high value", "cash transaction", "unauthorized", "board limit", "shareholder resolution"]
+    },
+    {
+      "section": "Section 199",
+      "title": "Investments in Associated Companies",
+      "description": "A company shall not make any investment in any of its associated companies or associated undertakings except under the authority of a special resolution. Unexpected transfers to related parties or unrecorded associated entities may violate this.",
+      "keywords": ["related party", "associated company", "investment", "unauthorized transfer"]
+    },
+    {
+      "section": "Section 227",
+      "title": "Financial statements",
+      "description": "Requires companies to prepare true and fair financial statements. Anomalies such as missing liabilities, double billings, or valuation errors inherently violate the preparation of accurate financial statements.",
+      "keywords": ["double billing", "valuation error", "stale stock", "unrecorded liability", "true and fair view"]
+    }
+  ]
+}

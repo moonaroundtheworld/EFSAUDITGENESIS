@@ -1,0 +1,28 @@
+{
+  "ISAs": [
+    {
+      "standard": "ISA 240",
+      "title": "The Auditor's Responsibilities Relating to Fraud in an Audit of Financial Statements",
+      "description": "Requires the auditor to maintain professional skepticism throughout the audit and recognize the possibility of material misstatement due to fraud.",
+      "keywords": ["fraud", "management override", "revenue recognition", "unusual transactions"]
+    },
+    {
+      "standard": "ISA 315",
+      "title": "Identifying and Assessing the Risks of Material Misstatement",
+      "description": "Requires the auditor to understand the entity and its environment to assess the risks of material misstatement whether due to fraud or error.",
+      "keywords": ["risk assessment", "internal control", "material misstatement", "environment"]
+    },
+    {
+      "standard": "ISA 330",
+      "title": "The Auditor's Responses to Assessed Risks",
+      "description": "Guides the auditor in designing and implementing responses to the risks of material misstatement identified and assessed.",
+      "keywords": ["audit evidence", "substantive procedures", "test of controls"]
+    },
+    {
+      "standard": "ISA 500",
+      "title": "Audit Evidence",
+      "description": "Explains what constitutes audit evidence and how the auditor obtains sufficient appropriate audit evidence to draw reasonable conclusions on which to base the auditor's opinion.",
+      "keywords": ["evidence", "reliability", "relevance", "sufficient", "appropriate"]
+    }
+  ]
+}
