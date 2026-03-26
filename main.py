@@ -20,9 +20,13 @@ from pydantic import BaseModel  # type: ignore
 from crypto_utils import decrypt_cryptojs_aes  # type: ignore
 from logic.planning import APMGenerator  # type: ignore
 from api.inventory_app import router as inventory_router  # type: ignore
+from routers.big_four import router as big_four_router
+from routers.cross_portal import router as cross_portal_router
 
 app = FastAPI(title="Audit Genesis API")
 app.include_router(inventory_router, prefix="/api/inventory")
+app.include_router(big_four_router, prefix="/api")
+app.include_router(cross_portal_router, prefix="/api/bridge")
 
 class EncryptedUpload(BaseModel):
     filename: str
@@ -54,15 +58,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://everyfinancialsolution.com",
-        "https://www.everyfinancialsolution.com",
-        "http://localhost:5173" # For local testing
-    ],
+    allow_origins=["http://localhost:5173", "https://everyfinancialsolution.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 def read_root():

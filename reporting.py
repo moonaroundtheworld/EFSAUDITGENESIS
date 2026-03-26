@@ -1,37 +1,13 @@
 import os
-from fpdf import FPDF  # type: ignore
+from reportlab.lib.pagesizes import letter # type: ignore
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak # type: ignore
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle # type: ignore
+from reportlab.lib import colors # type: ignore
 from datetime import datetime
 
-class AuditReportPDF(FPDF):
-    def header(self):
-        # Big Four styled minimalist layout
-        self.set_font('Arial', 'B', 15)
-        # EFS brand blue color
-        self.set_text_color(0, 51, 102) 
-        self.cell(0, 10, 'Every Financial Solutions', 0, 1, 'R')
-        
-        self.set_text_color(128, 128, 128)
-        self.set_font('Arial', 'I', 10)
-        self.cell(0, 10, 'Strict & Confidential Audit Deliverable', 0, 1, 'R')
-        self.ln(10)
-        
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.set_text_color(128, 128, 128)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-
 def generate_audit_opinion(total_risk_exposure: float, heatmap: dict, materiality_threshold: float = 1000000.0) -> str:
-    """
-    NLP Logic block constructing dynamic auditor opinions natively.
-    """
-    top_rule = None
-    if heatmap:
-        top_rule = max(heatmap.items(), key=lambda x: x[1])[0]
-        
-    basis = ""
-    if top_rule:
-        basis = f" Basis for Opinion: Extensively mapped failures linked explicitly to '{top_rule}'."
+    top_rule = max(heatmap.items(), key=lambda x: x[1])[0] if heatmap else None
+    basis = f" Basis for Opinion: Extensively mapped failures linked explicitly to '{top_rule}'." if top_rule else ""
         
     if total_risk_exposure > materiality_threshold:
         return f"MODIFIED OPINION (Adverse / Qualified): The financial records present a Material Misstatement.{basis} Verified risk exposure (PKR {total_risk_exposure:,.2f}) strictly overrides the structural materiality threshold."
@@ -40,85 +16,104 @@ def generate_audit_opinion(total_risk_exposure: float, heatmap: dict, materialit
     else:
         return "UNMODIFIED OPINION (Clean): The financial records are free from material misstatements and strictly conform to the accepted auditing frameworks natively mapping cleanly to the initial ledgers."
 
-def build_pdf_report(executive_summary: dict, filepath: str):
-    pdf = AuditReportPDF()
-    pdf.add_page()
+def build_pdf_report(client_name: str, executive_summary: dict, filepath: str):
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
+    styles = getSampleStyleSheet()
     
-    client_name = executive_summary.get("client", "Unknown Client")
+    # Custom EFS Brand Styles (Big Four Format)
+    title_style = ParagraphStyle(
+        'EFS_Title',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor("#04060F"),
+        alignment=1, # Center
+        spaceAfter=30
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'EFS_Subtitle',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor("#C9A84C"), # Gold
+        alignment=1,
+        spaceAfter=20
+    )
+    
+    body_style = styles['Normal']
+    
+    story = []
+    
+    # --- COVER PAGE ---
+    story.append(Spacer(1, 100))
+    story.append(Paragraph("EVERY FINANCIAL SOLUTIONS", title_style))
+    story.append(Paragraph("Master Audit Findings Report", subtitle_style))
+    story.append(Spacer(1, 50))
+    story.append(Paragraph(f"Client Entity: {client_name}", styles['Heading3']))
+    story.append(Paragraph(f"Report Date: {datetime.now().strftime('%B %d, %Y')}", styles['Heading3']))
+    story.append(Spacer(1, 100))
+    story.append(Paragraph("STRICTLY CONFIDENTIAL", ParagraphStyle('conf', alignment=1, textColor=colors.red)))
+    story.append(PageBreak())
+    
+    # --- EXECUTIVE SUMMARY ---
+    story.append(Paragraph("Executive Summary", styles['Heading1']))
     total_exposure = executive_summary.get("total_risk_exposure", 0.0)
+    opinion = executive_summary.get("draft_audit_opinion", "Opinion Pending.")
+    
+    story.append(Paragraph(f"Total Verified Risk Exposure: PKR {total_exposure:,.2f}", styles['Heading2']))
+    story.append(Spacer(1, 10))
+    story.append(Paragraph("Audit Opinion:", styles['Heading3']))
+    story.append(Paragraph(opinion, body_style))
+    story.append(Spacer(1, 20))
+    
+    # --- DETAILED FINDINGS ---
+    story.append(Paragraph("Detailed Findings & Anomalies", styles['Heading2']))
     top_flags = executive_summary.get("top_5_flags", [])
     
-    # Title
-    pdf.set_font('Arial', 'B', 20)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 15, 'Master Audit Findings Report', 0, 1, 'C')
-    pdf.ln(5)
-    
-    # Client Info Context
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, f"Client Entity: {client_name}", 0, 1)
-    pdf.cell(0, 10, f"Report Date: {datetime.now().strftime('%Y-%m-%d')}", 0, 1)
-    
-    pdf.ln(5)
-    regulatory_heatmap = executive_summary.get("regulatory_heatmap", {})
-    opinion = generate_audit_opinion(total_exposure, regulatory_heatmap)
-    
-    pdf.set_font('Arial', 'B', 14)
-    # Red for Modified, Green for Unmodified warning semantics
-    if "MODIFIED" in opinion:
-        pdf.set_text_color(153, 0, 0)
+    if top_flags:
+        data = [["Agent Source", "Reasoning & Finding"]]
+        for f in top_flags:
+            data.append([f.get("agent", "Unknown")[:20], f.get("reasoning", "")[:100] + "..."])
+            
+        t = Table(data, colWidths=[100, 350])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#04060F")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0,0), (-1,0), 12),
+            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor("#F5F5F5")),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#C9A84C")),
+        ]))
+        story.append(t)
     else:
-        pdf.set_text_color(0, 102, 0)
+        story.append(Paragraph("No critical findings reported.", body_style))
         
-    pdf.cell(0, 10, "Executive Audit Opinion:", 0, 1)
+    story.append(Spacer(1, 20))
     
-    pdf.set_font('Arial', '', 12)
-    pdf.set_text_color(0, 0, 0) # Reset black text
-    pdf.multi_cell(0, 8, opinion)
-    pdf.ln(10)
-    
-    # Total Risk Exposure Matrix
-    pdf.set_font('Arial', 'B', 14)
-    pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 10, "Total Verified Risk Exposure", 0, 1)
-    
-    pdf.set_font('Arial', '', 12)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, f"PKR {total_exposure:,.2f}", 0, 1)
-    pdf.ln(5)
-    
-    # Top 5 Critical Vulnerabilities
-    pdf.set_font('Arial', 'B', 14)
-    pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 10, "Top 5 Critical Anomalies", 0, 1)
-    
-    pdf.set_font('Arial', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    
-    if not top_flags:
-        pdf.cell(0, 10, "No critical flags detected mapping against defined matrices.", 0, 1)
-    else:
-        for idx, flag in enumerate(top_flags):
-            agent = flag.get('agent', 'Unknown')
-            reasoning = flag.get('reasoning', '')
-            pdf.multi_cell(0, 8, f"{idx+1}. [{agent}] {reasoning}")
-            pdf.ln(2)
-            
-    # Regulatory Violations Heatmap Integration
-    pdf.ln(5)
-    pdf.set_font('Arial', 'B', 14)
-    pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 10, "Regulatory Framework Violations Heatmap", 0, 1)
-    
-    pdf.set_font('Arial', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    
+    # --- REGULATORY HEATMAP ---
+    story.append(Paragraph("Regulatory Framework Heatmap", styles['Heading2']))
     heatmap = executive_summary.get("regulatory_heatmap", {})
-    if not heatmap:
-        pdf.cell(0, 10, "Zero Internal Regulatory Infractions natively recorded.", 0, 1)
-    else:
+    if heatmap:
+        hdata = [["Rule Cited", "Hit Count"]]
         for rule, count in heatmap.items():
-            pdf.cell(0, 10, f"Hit Count {count}x : {rule}", 0, 1)
-            
-    pdf.output(filepath)
+            hdata.append([rule, str(count)])
+        ht = Table(hdata, colWidths=[350, 100])
+        ht.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#04060F")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#C9A84C")),
+        ]))
+        story.append(ht)
+    else:
+        story.append(Paragraph("No regulatory infractions detected.", body_style))
+        
+    # --- SIGNATURE ---
+    story.append(Spacer(1, 50))
+    story.append(Paragraph("Respectfully Submitted,", body_style))
+    story.append(Spacer(1, 30))
+    story.append(Paragraph("Hamza Moon", styles['Heading3']))
+    story.append(Paragraph("Senior Lead Auditor", body_style))
+    story.append(Paragraph("Every Financial Solutions", body_style))
+    
+    doc.build(story)
     return filepath
